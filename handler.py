@@ -1,26 +1,35 @@
+import os
 from typing import List
+import datetime
+
+import boto3
+from botocore.exceptions import ClientError
 
 from news_scraper import ReutersScraper, NewsApiPoller
-from dataclasses import dataclass
 from summarize_news import Summarizer
-import smtplib
 
 
-@dataclass
 class NewsItem:
     url: str
     title: str
     summary: str
+
+    def __init__(self, url, title, summary) -> None:
+        super().__init__()
+        self.url = url
+        self.title = title
+        self.summary = summary
 
     def __str__(self) -> str:
         html = "<h2>" + self.title + "</h2>" + "<p>" + self.url + "</p>" + "<p>\n" + self.summary + "\n</p>"
         return html
 
 
-def gcp_pubsub(event, context):
+def lambda_handler(event, context):
     urls = get_urls()
     all_news = summarize_content(urls=urls)
     send_mails(all_news=all_news)
+    return "Done!"
 
 
 def get_urls() -> List[str]:
@@ -45,12 +54,51 @@ def summarize_content(urls) -> List[NewsItem]:
 
 def send_mails(all_news: List[NewsItem]):
     """ WIP: Creates a final message and sends it through mail.  """
-    sender = 'glion14dev@gmail.com'
-    receivers = ['amarksfeld@gmail.com']
+    SENDER = "Sender Name <glion14dev@gmail.com>"
+    RECIPIENT = os.environ["EMAIL_RECIPIENTS"]
+    SUBJECT = "Summarized news " + str(datetime.datetime.now().date())
     all_news_string = list(map(lambda x: str(x), all_news))
     message = '\n\n'.join(all_news_string)
+    AWS_REGION = os.environ['AWS_REGION']
+    CHARSET = "UTF-8"
+
+    BODY_HTML = """<html>
+    <head></head>
+    <body>
+      <h1 style="color: #5e9ca0;">Your daily digest of summarized news</h1>
+    """
+    for news in all_news:
+        BODY_HTML += """
+            <h2 style="color: #2e6c80;">{title}</h2>
+            <a href='{url}'>Link</a>
+            <p>{summary}</p><br><br>
+        """.format(title=news.title, url=news.url, summary=news.summary)
+
+    BODY_HTML += """
+    </body>
+    </html>"""
+
+    client = boto3.client('ses', region_name=AWS_REGION)
     try:
-        smtpObj = smtplib.SMTP('localhost')
-        smtpObj.sendmail(sender, receivers, message)
-    except smtplib.SMTPException:
-        print("Error: unable to send email")
+        response = client.send_email(
+            Destination={
+                'ToAddresses': [
+                    RECIPIENT,
+                ],
+            },
+            Message={
+                'Body': {
+                    'Html': {
+                        'Charset': CHARSET,
+                        'Data': BODY_HTML,
+                    },
+                },
+                'Subject': {
+                    'Charset': CHARSET,
+                    'Data': SUBJECT,
+                },
+            },
+            Source=SENDER,
+        )
+    except ClientError as e:
+        print(e.response['Error']['Message'])
