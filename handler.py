@@ -55,10 +55,9 @@ def summarize_content(urls) -> List[NewsItem]:
 def send_mails(all_news: List[NewsItem]):
     """ WIP: Creates a final message and sends it through mail.  """
     SENDER = "Sender Name <glion14dev@gmail.com>"
-    RECIPIENT = os.environ["EMAIL_RECIPIENTS"]
+    RECIPIENT = os.environ["EMAIL_RECIPIENTS"].split(",")
     SUBJECT = "Summarized news " + str(datetime.datetime.now().date())
     all_news_string = list(map(lambda x: str(x), all_news))
-    message = '\n\n'.join(all_news_string)
     AWS_REGION = os.environ['AWS_REGION']
     CHARSET = "UTF-8"
 
@@ -82,9 +81,7 @@ def send_mails(all_news: List[NewsItem]):
     try:
         response = client.send_email(
             Destination={
-                'ToAddresses': [
-                    RECIPIENT,
-                ],
+                'ToAddresses': RECIPIENT,
             },
             Message={
                 'Body': {

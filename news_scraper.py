@@ -18,7 +18,7 @@ class Scraper(object):
 
 class ReutersScraper(Scraper):
 
-    def __init__(self, url) -> None:
+    def __init__(self, url="") -> None:
         super().__init__(url)
 
     def reuters_news(self) -> [str, str]:
@@ -27,6 +27,8 @@ class ReutersScraper(Scraper):
         article_text = soup.body.text.strip().split("Reporting by")[0]
         return title, article_text
 
+    def clean_summary(self, summary: str) -> str:
+        return ' '.join(summary.split(" minutes ago")[1:])
 
 class AktualityScraper(Scraper):
 
