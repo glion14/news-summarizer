@@ -22,13 +22,12 @@ class ReutersScraper(Scraper):
         super().__init__(url)
 
     def reuters_news(self) -> [str, str]:
+        """ Parses a title and article text from the news. Article text is trimmed by the Reuters prefix. """
         soup = self.get_soup_from_url()
         title = soup.title.string.strip()
-        article_text = soup.body.text.strip().split("Reporting by")[0]
-        return title, article_text
+        full_article = soup.find(name="div", attrs={"class": "StandardArticleBody_body"}).text
+        return title, full_article
 
-    def clean_summary(self, summary: str) -> str:
-        return ' '.join(summary.split(" minutes ago")[1:])
 
 class AktualityScraper(Scraper):
 

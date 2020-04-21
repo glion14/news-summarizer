@@ -12,11 +12,6 @@ class ScraperTest(TestCase):
         self.assertEqual("Trump warns China could face consequences for virus outbreak - Reuters", head)
         self.assertIn("Donald Trump", text)
 
-    def test_clean_reuters_summary(self):
-        with open("fixture/reuters_sumary.txt", "r") as file:
-            summary = file.readlines()[0]
-            cleaned_summary = news_scraper.ReutersScraper().clean_summary(summary=summary)
-            self.assertNotIn("Discover Thomson ReutersFinancialGovernment", cleaned_summary)
 
     # Test Aktuality
     def test_scrape_aktuality_articles(self):

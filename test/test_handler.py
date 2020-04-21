@@ -12,4 +12,3 @@ class Test(TestCase):
         all_news = handler.summarize_content(urls)
         pprint(all_news)
         self.assertEqual(len(urls), len(all_news))
-        handler.send_mails()
