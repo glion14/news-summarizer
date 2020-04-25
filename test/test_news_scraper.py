@@ -34,3 +34,8 @@ class NewsApiTest(TestCase):
         newsapi = news_scraper.NewsApiPoller()
         article_urls = newsapi.get_reuters_urls()
         map(lambda x: self.assertIn("reuters", x), article_urls)
+
+    def test_get_bulgarian_urls(self):
+        newsapi = news_scraper.NewsApiPoller()
+        articles = newsapi.get_bulgarian_urls()
+        map(lambda x: self.assertEqual(len(x), 3), articles)

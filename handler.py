@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Tuple
 import datetime
 
 import boto3
@@ -26,16 +26,17 @@ class NewsItem:
 
 
 def lambda_handler(event, context):
-    urls = get_urls()
+    urls, bulgarian_urls = get_urls()
     all_news = summarize_content(urls=urls)
-    send_mails(all_news=all_news)
+    send_mails(all_news=all_news, non_summarized_urls=bulgarian_urls)
     return "Done!"
 
 
-def get_urls() -> List[str]:
+def get_urls() -> Tuple[List[str], List[Tuple[str, str, str]]]:
     newsapi = NewsApiPoller()
     reuters_urls = newsapi.get_reuters_urls()
-    return reuters_urls
+    bulgarian_urls = newsapi.get_bulgarian_urls()
+    return reuters_urls, bulgarian_urls
 
 
 def summarize_content(urls) -> List[NewsItem]:
@@ -52,12 +53,11 @@ def summarize_content(urls) -> List[NewsItem]:
     return all_news
 
 
-def send_mails(all_news: List[NewsItem]):
+def send_mails(all_news: List[NewsItem], non_summarized_urls: List[Tuple[str, str, str]]):
     """ WIP: Creates a final message and sends it through mail.  """
     SENDER = "Sender Name <glion14dev@gmail.com>"
     RECIPIENT = os.environ["EMAIL_RECIPIENTS"].split(",")
     SUBJECT = "Summarized news " + str(datetime.datetime.now().date())
-    all_news_string = list(map(lambda x: str(x), all_news))
     AWS_REGION = os.environ['AWS_REGION']
     CHARSET = "UTF-8"
 
@@ -66,12 +66,21 @@ def send_mails(all_news: List[NewsItem]):
     <body>
       <h1 style="color: #5e9ca0;">Your daily digest of summarized news</h1>
     """
+
     for news in all_news:
         BODY_HTML += """
             <h2 style="color: #2e6c80;">{title}</h2>
             <a href='{url}'>Link</a>
             <p>{summary}</p><br><br>
         """.format(title=news.title, url=news.url, summary=news.summary)
+
+    for (url, title, description) in non_summarized_urls:
+        BODY_HTML += """
+            <h2 style="color: #2e6c80;">{title}</h2>
+            <p>{description}</p>
+            <a href='{url}'>Non-summarized news</a>
+            <br><br>
+        """.format(url=url, title=title, description=description)
 
     BODY_HTML += """
     </body>

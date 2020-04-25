@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -59,3 +59,8 @@ class NewsApiPoller(object):
         result = self._api.get_top_headlines(sources="reuters")
         reuters_urls = list(map(lambda x: x["url"], result['articles']))
         return reuters_urls
+
+    def get_bulgarian_urls(self) -> List[Tuple[str, str, str]]:
+        result = self._api.get_top_headlines(country="bg")
+        bulgarian_news = list(map(lambda x: (x["url"], x["title"], x["description"]), result["articles"]))
+        return bulgarian_news
